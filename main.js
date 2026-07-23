@@ -14,21 +14,19 @@ const map = [
   [1,1,1,1,1,1,1,1]
 ];
 
-const TILE = 1; // each cell is 1 unit
-
 // ---------------- PLAYER ----------------
 let player = {
   x: 3.5,
   y: 3.5,
   angle: 0,
-  speed: 0.05,
-  rotSpeed: 0.03
+  speed: 0.06,
+  rotSpeed: 0.04
 };
 
 // ---------------- INPUT ----------------
 const keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
 // ---------------- RAYCAST ----------------
 function castRay(angle) {
@@ -53,42 +51,92 @@ function castRay(angle) {
 
 // ---------------- UPDATE ----------------
 function update() {
-  if (keys["ArrowLeft"]) player.angle -= player.rotSpeed;
-  if (keys["ArrowRight"]) player.angle += player.rotSpeed;
-
   const sin = Math.sin(player.angle);
   const cos = Math.cos(player.angle);
 
-  if (keys["ArrowUp"]) {
+  // ROTATION
+  if (keys["arrowleft"]) player.angle -= player.rotSpeed;
+  if (keys["arrowright"]) player.angle += player.rotSpeed;
+
+  // FORWARD / BACKWARD
+  if (keys["w"]) {
     const nx = player.x + cos * player.speed;
     const ny = player.y + sin * player.speed;
     if (map[Math.floor(ny)][Math.floor(nx)] === 0) {
-      player.x = nx;
-      player.y = ny;
+      player.x = nx; player.y = ny;
     }
   }
-
-  if (keys["ArrowDown"]) {
+  if (keys["s"]) {
     const nx = player.x - cos * player.speed;
     const ny = player.y - sin * player.speed;
     if (map[Math.floor(ny)][Math.floor(nx)] === 0) {
-      player.x = nx;
-      player.y = ny;
+      player.x = nx; player.y = ny;
+    }
+  }
+
+  // STRAFE LEFT / RIGHT
+  if (keys["a"]) {
+    const nx = player.x + sin * player.speed;
+    const ny = player.y - cos * player.speed;
+    if (map[Math.floor(ny)][Math.floor(nx)] === 0) {
+      player.x = nx; player.y = ny;
+    }
+  }
+  if (keys["d"]) {
+    const nx = player.x - sin * player.speed;
+    const ny = player.y + cos * player.speed;
+    if (map[Math.floor(ny)][Math.floor(nx)] === 0) {
+      player.x = nx; player.y = ny;
     }
   }
 }
 
-// ---------------- RENDER ----------------
-function render() {
-  ctx.fillStyle = "#444";
-  ctx.fillRect(0, 0, W, H);
-
+// ---------------- FLOOR + CEILING ----------------
+function renderFloorCeiling() {
   const fov = Math.PI / 3;
+  const halfH = H / 2;
+
+  for (let y = halfH; y < H; y++) {
+    const rowDist = halfH / (y - halfH);
+
+    const leftAngle = player.angle - fov / 2;
+    const rightAngle = player.angle + fov / 2;
+
+    const lx = player.x + Math.cos(leftAngle) * rowDist;
+    const ly = player.y + Math.sin(leftAngle) * rowDist;
+
+    const rx = player.x + Math.cos(rightAngle) * rowDist;
+    const ry = player.y + Math.sin(rightAngle) * rowDist;
+
+    const stepX = (rx - lx) / W;
+    const stepY = (ry - ly) / W;
+
+    let fx = lx;
+    let fy = ly;
+
+    for (let x = 0; x < W; x++) {
+      const shade = 80 + (rowDist * 4);
+      ctx.fillStyle = `rgb(${shade},${shade},${shade})`;
+      ctx.fillRect(x, y, 1, 1);
+
+      ctx.fillStyle = `rgb(${shade * 0.7},${shade * 0.7},${shade * 0.7})`;
+      ctx.fillRect(x, H - y, 1, 1);
+
+      fx += stepX;
+      fy += stepY;
+    }
+  }
+}
+
+// ---------------- RENDER WALLS ----------------
+function renderWalls() {
+  const fov = Math.PI / 3;
+
   for (let col = 0; col < W; col++) {
     const angle = player.angle + (col / W - 0.5) * fov;
     const hit = castRay(angle);
 
-    const dist = hit.dist * Math.cos(angle - player.angle); // remove fisheye
+    const dist = hit.dist * Math.cos(angle - player.angle);
     const wallHeight = (H / dist);
 
     const shade = 200 - hit.dist * 10;
@@ -101,7 +149,10 @@ function render() {
 // ---------------- LOOP ----------------
 function loop() {
   update();
-  render();
+
+  renderFloorCeiling();
+  renderWalls();
+
   requestAnimationFrame(loop);
 }
 loop();
