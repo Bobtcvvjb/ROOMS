@@ -93,38 +93,18 @@ function update() {
 
 // ---------------- FLOOR + CEILING ----------------
 function renderFloorCeiling() {
-  const fov = Math.PI / 3;
   const halfH = H / 2;
 
-  for (let y = halfH; y < H; y++) {
-    const rowDist = halfH / (y - halfH);
+  for (let y = 0; y < halfH; y++) {
+    const shade = 80 + (y * 0.5);
 
-    const leftAngle = player.angle - fov / 2;
-    const rightAngle = player.angle + fov / 2;
+    // Ceiling
+    ctx.fillStyle = `rgb(${shade * 0.7}, ${shade * 0.7}, ${shade * 0.7})`;
+    ctx.fillRect(0, y, W, 1);
 
-    const lx = player.x + Math.cos(leftAngle) * rowDist;
-    const ly = player.y + Math.sin(leftAngle) * rowDist;
-
-    const rx = player.x + Math.cos(rightAngle) * rowDist;
-    const ry = player.y + Math.sin(rightAngle) * rowDist;
-
-    const stepX = (rx - lx) / W;
-    const stepY = (ry - ly) / W;
-
-    let fx = lx;
-    let fy = ly;
-
-    for (let x = 0; x < W; x++) {
-      const shade = 80 + (rowDist * 4);
-      ctx.fillStyle = `rgb(${shade},${shade},${shade})`;
-      ctx.fillRect(x, y, 1, 1);
-
-      ctx.fillStyle = `rgb(${shade * 0.7},${shade * 0.7},${shade * 0.7})`;
-      ctx.fillRect(x, H - y, 1, 1);
-
-      fx += stepX;
-      fy += stepY;
-    }
+    // Floor
+    ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+    ctx.fillRect(0, H - y - 1, W, 1);
   }
 }
 
