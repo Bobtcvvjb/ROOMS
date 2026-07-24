@@ -103,7 +103,7 @@ function renderFloorCeiling() {
     ctx.fillRect(0, y, W, 1);
 
     // Floor (dark yellow)
-    ctx.fillStyle = `rgb(120,110,20)`;
+    ctx.fillStyle = `rgb(180,180,140)`;
     ctx.fillRect(0, H - y - 1, W, 1);
   }
 }
