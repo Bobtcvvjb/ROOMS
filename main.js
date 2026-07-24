@@ -116,34 +116,63 @@ function renderWalls() {
 
   for (let col = 0; col < W; col++) {
     const angle = player.angle + (col / W - 0.5) * fov;
-    const hit = castRay(angle);
 
-    const dist = hit.dist * Math.cos(angle - player.angle);
-    const wallHeight = (H / dist);
+    // --- Raycasting with side detection ---
+    const sin = Math.sin(angle);
+    const cos = Math.cos(angle);
 
-    const texIndex = hit.tile - 1; 
+    let dist = 0;
+    let hitTile = 0;
+    let side = 0; // 0 = vertical wall, 1 = horizontal wall
 
-    const hitX = player.x + Math.cos(angle) * hit.dist;
-    const hitY = player.y + Math.sin(angle) * hit.dist;
+    while (dist < 20) {
+      const rx = player.x + cos * dist;
+      const ry = player.y + sin * dist;
+
+      const mx = Math.floor(rx);
+      const my = Math.floor(ry);
+
+      if (map[my] && map[my][mx] > 0) {
+        hitTile = map[my][mx];
+
+        // Determine which side was hit
+        const dx = rx - mx;
+        const dy = ry - my;
+        side = (Math.abs(dx) > Math.abs(dy)) ? 0 : 1;
+
+        break;
+      }
+      dist += 0.01;
+    }
+
+    if (!hitTile) continue;
+
+    // Remove fisheye
+    const correctedDist = dist * Math.cos(angle - player.angle);
+    const wallHeight = H / correctedDist;
+
+    // --- Texture column sampling ---
     let texX;
-    if (Math.abs(hitX - Math.floor(hitX)) > Math.abs(hitY - Math.floor(hitY))) {
-      texX = hitX % 1;
+    if (side === 0) {
+      texX = (player.y + sin * dist) % 1;
     } else {
-      texX = hitY % 1;
+      texX = (player.x + cos * dist) % 1;
     }
     if (texX < 0) texX += 1;
 
+    const texIndex = hitTile - 1;
     const sx = texIndex * texSize + Math.floor(texX * texSize);
 
-    // Draw scaled texture column
+    // --- Draw the column ---
     ctx.drawImage(
       wallTexture,
-      sx, 0, 1, texSize,            // source column
-      col, (H - wallHeight) / 2,    // destination
+      sx, 0, 1, texSize,
+      col, (H - wallHeight) / 2,
       1, wallHeight
     );
   }
 }
+
 
 // ---------------- LOOP ----------------
 function loop() {
