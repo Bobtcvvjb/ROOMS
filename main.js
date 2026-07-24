@@ -1,3 +1,5 @@
+const wallTexture = new Image();
+wallTexture.src = "BACKWALL.png";
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
