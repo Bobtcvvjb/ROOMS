@@ -98,21 +98,21 @@ function renderFloorCeiling() {
   const halfH = H / 2;
 
   for (let y = 0; y < halfH; y++) {
-    const shade = 80 + (y * 0.5);
-
-    // Ceiling
-    ctx.fillStyle = `rgb(${shade * 0.7}, ${shade * 0.7}, ${shade * 0.7})`;
+    // Ceiling (light gray)
+    ctx.fillStyle = `rgb(150,150,150)`;
     ctx.fillRect(0, y, W, 1);
 
-    // Floor
-    ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+    // Floor (dark yellow)
+    ctx.fillStyle = `rgb(120,110,20)`;
     ctx.fillRect(0, H - y - 1, W, 1);
   }
 }
 
+
 // ---------------- RENDER WALLS ----------------
 function renderWalls() {
   const fov = Math.PI / 3;
+  const texSize = 64;
 
   for (let col = 0; col < W; col++) {
     const angle = player.angle + (col / W - 0.5) * fov;
@@ -121,10 +121,27 @@ function renderWalls() {
     const dist = hit.dist * Math.cos(angle - player.angle);
     const wallHeight = (H / dist);
 
-    const shade = 200 - hit.dist * 10;
-    ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+    const texIndex = hit.tile - 1; 
 
-    ctx.fillRect(col, (H - wallHeight) / 2, 1, wallHeight);
+    const hitX = player.x + Math.cos(angle) * hit.dist;
+    const hitY = player.y + Math.sin(angle) * hit.dist;
+    let texX;
+    if (Math.abs(hitX - Math.floor(hitX)) > Math.abs(hitY - Math.floor(hitY))) {
+      texX = hitX % 1;
+    } else {
+      texX = hitY % 1;
+    }
+    if (texX < 0) texX += 1;
+
+    const sx = texIndex * texSize + Math.floor(texX * texSize);
+
+    // Draw scaled texture column
+    ctx.drawImage(
+      wallTexture,
+      sx, 0, 1, texSize,            // source column
+      col, (H - wallHeight) / 2,    // destination
+      1, wallHeight
+    );
   }
 }
 
